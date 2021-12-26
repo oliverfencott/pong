@@ -20,7 +20,7 @@ const PADDLE_WIDTH = 16;
 const ball = {
   size: vec2(8, 8),
   position: vec2(WIDTH / 2, HEIGHT / 2),
-  velocity: vec2(0.5, 0)
+  velocity: vec2(0.5, 0.5)
 };
 
 const paddleSize = Object.freeze(vec2(PADDLE_WIDTH, PADDLE_HEIGHT));
@@ -91,6 +91,7 @@ export function update(dt: number) {
   }
 
   if (
+    ball.velocity.x < 0 &&
     isColliding(
       ball.position.x,
       ball.position.y,
@@ -102,11 +103,7 @@ export function update(dt: number) {
       paddle1.size.y
     )
   ) {
-    const velX = (ball.position.x - paddle1.position.x) / paddle1.size.x;
-    const velY = (ball.position.y - paddle1.position.y) / paddle1.size.y;
-
-    ball.velocity.x = velX;
-    ball.velocity.y = velY;
+    ball.velocity.x *= -1;
   }
 
   // Paddle 2
@@ -126,6 +123,7 @@ export function update(dt: number) {
   }
 
   if (
+    ball.velocity.x > 0 &&
     isColliding(
       ball.position.x,
       ball.position.y,
@@ -137,11 +135,7 @@ export function update(dt: number) {
       paddle2.size.y
     )
   ) {
-    const velX = (ball.position.x - paddle2.position.x) / paddle2.size.x;
-    const velY = (ball.position.y - paddle2.position.y) / paddle2.size.y;
-
-    ball.velocity.x = velX;
-    ball.velocity.y = velY;
+    ball.velocity.x *= -1;
   }
 }
 
@@ -198,8 +192,6 @@ export function draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(ball.position.x, ball.position.y, ball.size.x, 0, 2 * Math.PI);
     ctx.fill();
-
-    // ctx.fillRect(ball.position.x, ball.position.y, ball.size.x, ball.size.y);
   });
 }
 
