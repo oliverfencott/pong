@@ -1,4 +1,4 @@
-import { draw, load, update } from './game';
+import { draw, load, update } from './src/game';
 import './style.css';
 
 const canvas = document.querySelector('canvas')!;
