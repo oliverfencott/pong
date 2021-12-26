@@ -1,13 +1,28 @@
-import { COLOR, HEIGHT, WIDTH } from './constants';
+import {
+  BALL_COLOR,
+  HEIGHT,
+  PADDLE_COLOR,
+  SCORE_COLOR,
+  TEXT_COLOR,
+  WIDTH
+} from './constants';
 import { Actions, Mode } from './enums';
 import { controls } from './input';
-import { clamp, isColliding, vec2 } from './shared';
+import { makeParticle, particle } from './partcile';
+import { clamp, isColliding, sign, vec2 } from './shared';
+
+type paddle = {
+  size: Readonly<vec2>;
+  position: vec2;
+  score: number;
+};
 
 export default function (mode: Mode) {
   const PADDLE_HEIGHT = mode === Mode.FAST ? 80 : 64;
   const PADDLE_WIDTH = 16;
 
   let paused = false;
+  let timeElapsed = 0;
 
   const ball = {
     size: vec2(8, 8),
@@ -17,19 +32,21 @@ export default function (mode: Mode) {
 
   const paddleSize = Object.freeze(vec2(PADDLE_WIDTH, PADDLE_HEIGHT));
 
-  const paddle1 = {
+  const paddle1: paddle = {
     size: paddleSize,
-    position: vec2(0, HEIGHT / 2),
+    position: vec2(0, HEIGHT / 3),
     score: 0
   };
 
-  const paddle2 = {
+  const paddle2: paddle = {
     size: paddleSize,
-    position: vec2(WIDTH - PADDLE_WIDTH, HEIGHT / 2),
+    position: vec2(WIDTH - PADDLE_WIDTH, HEIGHT / 1.5),
     score: 0
   };
 
   const paddleAccelerationRate = mode === Mode.FAST ? 0.75 : 0.5;
+
+  const particles: particle[] = [];
 
   return { update, draw };
 
@@ -43,7 +60,10 @@ export default function (mode: Mode) {
     }
 
     if (paused) {
+      //
     } else {
+      timeElapsed += dt / 1000;
+
       const ballAcceleration = dt * 0.5;
 
       // Ball
@@ -58,12 +78,23 @@ export default function (mode: Mode) {
         ball.position.y + ball.velocity.y * ballAcceleration
       );
 
+      let particlesCount = 30;
+
       if (ball.position.x + ball.size.x >= WIDTH) {
+        while (--particlesCount) {
+          particles.push(
+            makeParticle(ball.position, -1, sign(Math.random() - 0.5))
+          );
+        }
+
         ball.velocity.x *= -1;
         paddle1.score += 1;
       }
 
       if (ball.position.x <= 0) {
+        while (--particlesCount) {
+          particles.push(makeParticle(ball.position, 1, sign(Math.random())));
+        }
         ball.velocity.x *= -1;
         paddle2.score += 1;
       }
@@ -142,6 +173,16 @@ export default function (mode: Mode) {
         ball.velocity.x *= -1;
       }
     }
+
+    particles.forEach((p, index) => {
+      p.position.x += p.dir.x * p.acc.x;
+      p.position.y += p.dir.y * p.acc.y;
+      p.opacity -= dt / 2000;
+
+      if (p.opacity < 0) {
+        particles.splice(index, 1);
+      }
+    });
   }
 
   function withRestore(ctx: CanvasRenderingContext2D) {
@@ -157,9 +198,17 @@ export default function (mode: Mode) {
 
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
+    // Ball
+    draw(ctx => {
+      ctx.fillStyle = BALL_COLOR;
+      ctx.beginPath();
+      ctx.arc(ball.position.x, ball.position.y, ball.size.x, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
     // Paddle1
     draw(ctx => {
-      ctx.fillStyle = COLOR;
+      ctx.fillStyle = PADDLE_COLOR;
       ctx.fillRect(
         paddle1.position.x,
         paddle1.position.y,
@@ -170,7 +219,7 @@ export default function (mode: Mode) {
 
     // Paddle2
     draw(ctx => {
-      ctx.fillStyle = COLOR;
+      ctx.fillStyle = PADDLE_COLOR;
       ctx.fillRect(
         paddle2.position.x,
         paddle2.position.y,
@@ -182,7 +231,8 @@ export default function (mode: Mode) {
     // Scores
     draw(ctx => {
       const QUARTER = WIDTH / 4;
-      ctx.fillStyle = COLOR;
+
+      ctx.fillStyle = SCORE_COLOR;
       ctx.fillText(paddle1.score.toLocaleString(), QUARTER, HEIGHT / 2);
       ctx.fillText(
         paddle2.score.toLocaleString(),
@@ -191,21 +241,29 @@ export default function (mode: Mode) {
       );
     });
 
-    // Ball
+    for (const p of particles) {
+      draw(ctx => {
+        const color = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.opacity})`;
+
+        ctx.fillStyle = color;
+        ctx.fillRect(p.position.x, p.position.y, p.size.x, p.size.y);
+      });
+    }
+
     draw(ctx => {
-      ctx.fillStyle = COLOR;
-      ctx.beginPath();
-      ctx.arc(ball.position.x, ball.position.y, ball.size.x, 0, 2 * Math.PI);
-      ctx.fill();
+      ctx.font = '20px monospace';
+      ctx.fillStyle = TEXT_COLOR;
+      const secondsElapsed = Math.floor(timeElapsed);
+
+      ctx.fillText(secondsElapsed.toString(), 8, 24);
     });
 
     if (paused) {
       ctx.globalAlpha = 0.4;
       draw(ctx => {
-        //
         ctx.save();
         ctx.globalAlpha = 1;
-        ctx.fillStyle = COLOR;
+        ctx.fillStyle = TEXT_COLOR;
         ctx.fillText('paused', 100, HEIGHT * 0.7);
         ctx.fillText('r = restart', 100, HEIGHT * 0.9);
         ctx.restore();

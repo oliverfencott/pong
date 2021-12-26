@@ -1,4 +1,4 @@
-import { COLOR, HEIGHT, WIDTH } from './constants';
+import { HEIGHT, TEXT_COLOR, WIDTH } from './constants';
 import { Actions } from './enums';
 import { controls } from './input';
 
@@ -20,7 +20,7 @@ export default function () {
 
     ctx.save();
     ctx.globalAlpha = 1;
-    ctx.fillStyle = COLOR;
+    ctx.fillStyle = TEXT_COLOR;
     ctx.fillText('p = play', 100, HEIGHT * 0.7);
     ctx.fillText('f = fast', 100, HEIGHT * 0.9);
     ctx.restore();

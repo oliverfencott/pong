@@ -1,20 +1,22 @@
-import { COLOR, HEIGHT, WIDTH } from './constants';
+import { HEIGHT, TEXT_COLOR, WIDTH } from './constants';
 import { Actions, Mode } from './enums';
 import { init } from './input';
 import menu from './menu';
 import play from './play';
 
 const scene = {
-  current: menu()
+  // current: menu()
+  current: play(Mode.NORMAL)
 };
 
 export function load(ctx: CanvasRenderingContext2D) {
   ctx.canvas.height = HEIGHT;
   ctx.canvas.width = WIDTH;
   ctx.canvas.style.borderWidth = '1px';
-  ctx.canvas.style.borderColor = COLOR;
+  ctx.canvas.style.borderColor = TEXT_COLOR;
   ctx.canvas.style.borderStyle = 'solid';
 
+  document.body.style.backgroundColor = 'white';
   ctx.font = '80px monospace';
 
   init(ctx);

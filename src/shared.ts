@@ -35,3 +35,6 @@ export function pointIntersectsRect(point: vec2, position: vec2, size: vec2) {
     point.y < position.y + size.y
   );
 }
+
+// @ts-ignore
+export const sign = (x: number): -1 | 0 | 1 => Math.sign(x);
