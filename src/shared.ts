@@ -19,11 +19,8 @@ export function isColliding(
   b_w: number,
   b_h: number
 ) {
-  return !(
-    b_x > a_w + a_x ||
-    a_x > b_w + b_x ||
-    b_y > a_h + a_y ||
-    a_y > b_h + b_y
+  return (
+    a_x < b_x + b_w && a_x + a_w > b_x && a_y < b_y + b_h && a_h + a_y > b_y
   );
 }
 

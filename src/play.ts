@@ -18,7 +18,7 @@ type paddle = {
 };
 
 export default function (mode: Mode) {
-  const PADDLE_HEIGHT = mode === Mode.FAST ? 80 : 64;
+  const paddleHeight = mode === Mode.FAST ? 80 : 64;
   const PADDLE_WIDTH = 16;
 
   let paused = false;
@@ -27,10 +27,11 @@ export default function (mode: Mode) {
   const ball = {
     size: vec2(8, 8),
     position: vec2(WIDTH / 2, HEIGHT / 2),
-    velocity: mode === Mode.FAST ? vec2(1, 1) : vec2(0.5, 0.5)
+    velocity: mode === Mode.FAST ? vec2(8.5, 8.5) : vec2(5, 5),
+    maxVelocity: mode === Mode.FAST ? vec2(15, 15) : vec2(7.5, 7.5)
   };
 
-  const paddleSize = Object.freeze(vec2(PADDLE_WIDTH, PADDLE_HEIGHT));
+  const paddleSize = Object.freeze(vec2(PADDLE_WIDTH, paddleHeight));
 
   const paddle1: paddle = {
     size: paddleSize,
@@ -64,19 +65,30 @@ export default function (mode: Mode) {
     } else {
       timeElapsed += dt / 1000;
 
-      const ballAcceleration = dt * 0.5;
+      const ballAcceleration = dt / 10000;
 
-      // Ball
-      ball.position.x = clamp(
-        0,
-        WIDTH,
-        ball.position.x + ball.velocity.x * ballAcceleration
-      );
-      ball.position.y = clamp(
-        0,
-        HEIGHT,
-        ball.position.y + ball.velocity.y * ballAcceleration
-      );
+      {
+        const xDir = sign(ball.velocity.x);
+        const currentX = Math.abs(ball.velocity.x);
+
+        if (currentX !== ball.maxVelocity.x) {
+          ball.velocity.x =
+            Math.min(ball.maxVelocity.x, currentX + ballAcceleration) * xDir;
+        }
+      }
+
+      {
+        const yDir = sign(ball.velocity.y);
+        const currentY = Math.abs(ball.velocity.y);
+
+        if (currentY !== ball.maxVelocity.y) {
+          ball.velocity.y =
+            Math.min(ball.maxVelocity.y, currentY + ballAcceleration) * yDir;
+        }
+      }
+
+      ball.position.x = clamp(0, WIDTH, ball.position.x + ball.velocity.x);
+      ball.position.y = clamp(0, HEIGHT, ball.position.y + ball.velocity.y);
 
       let particlesCount = 30;
 
@@ -198,11 +210,39 @@ export default function (mode: Mode) {
 
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
+    // Clock
+    draw(ctx => {
+      ctx.font = '20px monospace';
+      ctx.fillStyle = TEXT_COLOR;
+      const secondsElapsed = Math.floor(timeElapsed);
+
+      ctx.fillText(secondsElapsed.toString(), 8, 24);
+    });
+
+    // Scores
+    draw(ctx => {
+      const QUARTER = WIDTH / 4;
+
+      ctx.fillStyle = SCORE_COLOR;
+      ctx.fillText(paddle1.score.toLocaleString(), QUARTER, HEIGHT / 2);
+      ctx.fillText(
+        paddle2.score.toLocaleString(),
+        QUARTER * 3 - QUARTER / 3,
+        HEIGHT / 2
+      );
+    });
+
     // Ball
     draw(ctx => {
       ctx.fillStyle = BALL_COLOR;
       ctx.beginPath();
-      ctx.arc(ball.position.x, ball.position.y, ball.size.x, 0, 2 * Math.PI);
+      ctx.arc(
+        ball.position.x + ball.size.x / 2,
+        ball.position.y + ball.size.y / 2,
+        ball.size.x,
+        0,
+        2 * Math.PI
+      );
       ctx.fill();
     });
 
@@ -228,19 +268,7 @@ export default function (mode: Mode) {
       );
     });
 
-    // Scores
-    draw(ctx => {
-      const QUARTER = WIDTH / 4;
-
-      ctx.fillStyle = SCORE_COLOR;
-      ctx.fillText(paddle1.score.toLocaleString(), QUARTER, HEIGHT / 2);
-      ctx.fillText(
-        paddle2.score.toLocaleString(),
-        QUARTER * 3 - QUARTER / 3,
-        HEIGHT / 2
-      );
-    });
-
+    // Particles
     for (const p of particles) {
       draw(ctx => {
         const color = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.opacity})`;
@@ -249,14 +277,6 @@ export default function (mode: Mode) {
         ctx.fillRect(p.position.x, p.position.y, p.size.x, p.size.y);
       });
     }
-
-    draw(ctx => {
-      ctx.font = '20px monospace';
-      ctx.fillStyle = TEXT_COLOR;
-      const secondsElapsed = Math.floor(timeElapsed);
-
-      ctx.fillText(secondsElapsed.toString(), 8, 24);
-    });
 
     if (paused) {
       ctx.globalAlpha = 0.4;

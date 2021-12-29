@@ -5,8 +5,7 @@ import menu from './menu';
 import play from './play';
 
 const scene = {
-  // current: menu()
-  current: play(Mode.NORMAL)
+  current: menu()
 };
 
 export function load(ctx: CanvasRenderingContext2D) {
